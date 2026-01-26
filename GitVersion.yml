@@ -9,7 +9,7 @@ branches:
   master:
     regex: ^master$
     mode: ContinuousDeployment
-    tag: ''
+    label: ''
     increment: Inherit
     prevent-increment-of-merged-branch-version: false
     track-merge-target: false
@@ -20,7 +20,7 @@ branches:
   feature:
     regex: ^feat(ure)?[/-]
     mode: ContinuousDeployment
-    tag: alpha
+    label: alpha
     increment: Minor
     source-branches: ['master']
     is-source-branch-for: ['master']
@@ -28,7 +28,7 @@ branches:
   fix:
     regex: ^(fix|bugfix|patch)[/-]
     mode: ContinuousDeployment
-    tag: beta
+    label: beta
     increment: Patch
     source-branches: ['master']
     is-source-branch-for: ['master']
@@ -36,7 +36,7 @@ branches:
   breaking:
     regex: ^(breaking|major)[/-]
     mode: ContinuousDeployment
-    tag: alpha
+    label: alpha
     increment: Major
     source-branches: ['master']
     is-source-branch-for: ['master']

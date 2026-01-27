@@ -59,6 +59,7 @@ jobs:
             branches:
               master:
                 increment: ${{ steps.bump.outputs.increment }}
+                track-merge-message: false
 
       - name: Display Version
         run: |

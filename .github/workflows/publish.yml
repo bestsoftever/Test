@@ -54,12 +54,17 @@ jobs:
       - name: Determine Version
         id: gitversion
         uses: gittools/actions/gitversion/execute@v4
+        env:
+          IGNORE_NORMALISATION_GIT_HEAD_MOVE: 1
         with:
           overrideConfig: |
+            mode: ContinuousDeployment
             branches:
               master:
                 increment: ${{ steps.bump.outputs.increment }}
+                label: ''
                 track-merge-message: false
+                track-merge-target: false
 
       - name: Display Version
         run: |

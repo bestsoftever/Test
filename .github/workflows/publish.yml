@@ -86,11 +86,6 @@ jobs:
           echo "semVer=$NEW_VERSION" >> $GITHUB_OUTPUT
         shell: bash
 
-      - name: Display Version
-        run: |
-          echo "SemVer: ${{ steps.calc_version.outputs.semVer }}"
-          echo "Increment: ${{ steps.bump.outputs.increment }}"
-
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'

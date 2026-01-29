@@ -37,18 +37,45 @@ jobs:
           if [[ "$BRANCH" =~ ^(breaking|major)[/-] ]]; then
             echo "increment=Major" >> $GITHUB_OUTPUT
             echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "label=breaking-change" >> $GITHUB_OUTPUT
+            echo "category=💥 Breaking Changes" >> $GITHUB_OUTPUT
           elif [[ "$BRANCH" =~ ^(feat|feature)[/-] ]]; then
             echo "increment=Minor" >> $GITHUB_OUTPUT
             echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "label=feature" >> $GITHUB_OUTPUT
+            echo "category=🚀 Features" >> $GITHUB_OUTPUT
           elif [[ "$BRANCH" =~ ^(fix|bugfix|patch|hotfix)[/-] ]]; then
             echo "increment=Patch" >> $GITHUB_OUTPUT
             echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "label=bug" >> $GITHUB_OUTPUT
+            echo "category=🐛 Bug Fixes" >> $GITHUB_OUTPUT
           elif [[ "$BRANCH" =~ ^(perf)[/-] ]]; then
             echo "increment=Patch" >> $GITHUB_OUTPUT
             echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "label=performance" >> $GITHUB_OUTPUT
+            echo "category=⚡ Performance Improvements" >> $GITHUB_OUTPUT
           elif [[ "$BRANCH" =~ ^(chore|build|ci|docs|style|refactor|test|revert)[/-] ]]; then
             echo "increment=None" >> $GITHUB_OUTPUT
             echo "should_release=false" >> $GITHUB_OUTPUT
+            if [[ "$BRANCH" =~ ^docs[/-] ]]; then
+              echo "label=documentation" >> $GITHUB_OUTPUT
+              echo "category=📚 Documentation" >> $GITHUB_OUTPUT
+            elif [[ "$BRANCH" =~ ^test[/-] ]]; then
+              echo "label=test" >> $GITHUB_OUTPUT
+              echo "category=🧪 Tests" >> $GITHUB_OUTPUT
+            elif [[ "$BRANCH" =~ ^refactor[/-] ]]; then
+              echo "label=refactor" >> $GITHUB_OUTPUT
+              echo "category=🔄 Refactoring" >> $GITHUB_OUTPUT
+            elif [[ "$BRANCH" =~ ^style[/-] ]]; then
+              echo "label=style" >> $GITHUB_OUTPUT
+              echo "category=🎨 Styling" >> $GITHUB_OUTPUT
+            elif [[ "$BRANCH" =~ ^(build|ci)[/-] ]]; then
+              echo "label=ci" >> $GITHUB_OUTPUT
+              echo "category=🔨 Build & CI" >> $GITHUB_OUTPUT
+            else
+              echo "label=chore" >> $GITHUB_OUTPUT
+              echo "category=🔧 Maintenance" >> $GITHUB_OUTPUT
+            fi
             echo "ℹ️  Branch type does not trigger a release"
           else
             echo "❌ Invalid branch name: $BRANCH"
@@ -61,6 +88,21 @@ jobs:
             exit 1
           fi
         shell: bash
+
+      - name: Add label to PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const label = '${{ steps.bump.outputs.label }}';
+            if (label) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ github.event.pull_request.number }},
+                labels: [label]
+              });
+              console.log(`✅ Added label: ${label}`);
+            }
 
       - name: Calculate next version
         id: calc_version
@@ -139,3 +181,46 @@ jobs:
           git tag -a "$TAG" -m "Release $TAG"
           git push origin "$TAG"
           echo "Created and pushed tag: $TAG"
+
+      - name: Create GitHub Release
+        if: steps.bump.outputs.should_release == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = `v${{ steps.calc_version.outputs.semVer }}`;
+            const prTitle = `${{ github.event.pull_request.title }}`;
+            const prBody = `${{ github.event.pull_request.body }}`;
+            const prNumber = ${{ github.event.pull_request.number }};
+            const category = `${{ steps.bump.outputs.category }}`;
+            const increment = `${{ steps.bump.outputs.increment }}`;
+            
+            // Generate release notes using GitHub's API
+            const { data: releaseNotes } = await github.rest.repos.generateReleaseNotes({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: tag,
+            });
+            
+            // Create custom release body
+            let releaseBody = `## ${category}\n\n`;
+            releaseBody += `**${prTitle}** (#${prNumber})\n\n`;
+            
+            if (prBody) {
+              releaseBody += `${prBody}\n\n`;
+            }
+            
+            releaseBody += `---\n\n`;
+            releaseBody += releaseNotes.body;
+            
+            // Create the release
+            await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: tag,
+              name: `Release ${tag}`,
+              body: releaseBody,
+              draft: false,
+              prerelease: false
+            });
+            
+            console.log(`✅ Created release ${tag}`);

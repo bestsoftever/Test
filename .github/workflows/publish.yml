@@ -152,27 +152,27 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      # - name: Restore dependencies
-      #   run: dotnet restore
+      - name: Restore dependencies
+        run: dotnet restore
 
-      # - name: Build
-      #   run: dotnet build --configuration Release --no-restore -p:Version=${{ steps.gitversion.outputs.semVer }}
+      - name: Build
+        run: dotnet build --configuration Release --no-restore -p:Version=${{ steps.gitversion.outputs.semVer }}
 
-      # - name: Run tests
-      #   run: dotnet test --configuration Release --no-build
+      - name: Run tests
+        run: dotnet test --configuration Release --no-build
 
-      # - name: Pack NuGet packages
-      #   run: dotnet pack --configuration Release --no-build -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} -o ./artifacts
+      - name: Pack NuGet packages
+        run: dotnet pack --configuration Release --no-build -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} -o ./artifacts
 
-      # - name: List artifacts (debug)
-      #   run: ls -la ./artifacts
+      - name: List artifacts (debug)
+        run: ls -la ./artifacts
 
-      # - name: Publish to NuGet.org
-      #   env:
-      #     NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-      #   run: |
-      #     echo "Pushing packages to NuGet.org..."
-      #     dotnet nuget push "./artifacts/*.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
+      - name: Publish to NuGet.org
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          echo "Pushing packages to NuGet.org..."
+          dotnet nuget push "./artifacts/*.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
 
       - name: Create and push git tag
         if: steps.bump.outputs.should_release == 'true'

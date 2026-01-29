@@ -153,21 +153,27 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore dependencies
+        if: steps.bump.outputs.should_release == 'true'
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore -p:Version=${{ steps.gitversion.outputs.semVer }}
+        if: steps.bump.outputs.should_release == 'true'
+        run: dotnet build --configuration Release --no-restore -p:Version=${{ steps.calc_version.outputs.semVer }}
 
       - name: Run tests
+        if: steps.bump.outputs.should_release == 'true'
         run: dotnet test --configuration Release --no-build
 
       - name: Pack NuGet packages
-        run: dotnet pack --configuration Release --no-build -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} -o ./artifacts
+        if: steps.bump.outputs.should_release == 'true'
+        run: dotnet pack --configuration Release --no-build -p:PackageVersion=${{ steps.calc_version.outputs.semVer }} -o ./artifacts
 
       - name: List artifacts (debug)
+        if: steps.bump.outputs.should_release == 'true'
         run: ls -la ./artifacts
 
       - name: Publish to NuGet.org
+        if: steps.bump.outputs.should_release == 'true'
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |

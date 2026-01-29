@@ -20,12 +20,19 @@ jobs:
       - name: Extract version from tag
         id: version
         run: |
+          echo "GITHUB_REF: $GITHUB_REF"
           TAG="${GITHUB_REF#refs/tags/}"
+          echo "TAG after removing refs/tags/: $TAG"
           VERSION="${TAG#v}"
+          echo "VERSION after removing v: $VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "Extracted version: $VERSION from tag: $TAG"
         shell: bash
+
+      - name: Debug version
+        run: |
+          echo "Version output: ${{ steps.version.outputs.version }}"
+          echo "Tag output: ${{ steps.version.outputs.tag }}"
 
       - uses: actions/setup-dotnet@v4
         with:
@@ -35,7 +42,7 @@ jobs:
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore -p:Version=${{ steps.version.outputs.version }}
+        run: dotnet build --configuration Release --no-restore -p:Version="${{ steps.version.outputs.version }}"
 
       - name: Run tests
         run: dotnet test --configuration Release --no-build --verbosity normal

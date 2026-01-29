@@ -36,18 +36,30 @@ jobs:
           
           if [[ "$BRANCH" =~ ^(breaking|major)[/-] ]]; then
             echo "increment=Major" >> $GITHUB_OUTPUT
+            echo "should_release=true" >> $GITHUB_OUTPUT
           elif [[ "$BRANCH" =~ ^(feat|feature)[/-] ]]; then
             echo "increment=Minor" >> $GITHUB_OUTPUT
-          elif [[ "$BRANCH" =~ ^(fix|bugfix|patch)[/-] ]]; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH" =~ ^(fix|bugfix|patch|hotfix)[/-] ]]; then
             echo "increment=Patch" >> $GITHUB_OUTPUT
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH" =~ ^(perf)[/-] ]]; then
+            echo "increment=Patch" >> $GITHUB_OUTPUT
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH" =~ ^(chore|build|ci|docs|style|refactor|test|revert)[/-] ]]; then
+            echo "increment=None" >> $GITHUB_OUTPUT
+            echo "should_release=false" >> $GITHUB_OUTPUT
+            echo "ℹ️  Branch type does not trigger a release"
           else
             echo "increment=Patch" >> $GITHUB_OUTPUT
-            echo "Branch doesn't match pattern, defaulting to Patch"
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "⚠️  Branch doesn't match pattern, defaulting to Patch"
           fi
         shell: bash
 
       - name: Calculate next version
         id: calc_version
+        if: steps.bump.outputs.should_release == 'true'
         run: |
           # Get the latest tag
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
@@ -87,6 +99,7 @@ jobs:
         shell: bash
 
       - uses: actions/setup-dotnet@v4
+        if: steps.bump.outputs.should_release == 'true'
         with:
           dotnet-version: '8.0.x'
 
@@ -113,6 +126,7 @@ jobs:
       #     dotnet nuget push "./artifacts/*.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
 
       - name: Create and push git tag
+        if: steps.bump.outputs.should_release == 'true'
         run: |
           TAG="v${{ steps.calc_version.outputs.semVer }}"
           git config user.name "github-actions[bot]"

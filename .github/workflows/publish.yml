@@ -51,9 +51,14 @@ jobs:
             echo "should_release=false" >> $GITHUB_OUTPUT
             echo "ℹ️  Branch type does not trigger a release"
           else
-            echo "increment=Patch" >> $GITHUB_OUTPUT
-            echo "should_release=true" >> $GITHUB_OUTPUT
-            echo "⚠️  Branch doesn't match pattern, defaulting to Patch"
+            echo "❌ Invalid branch name: $BRANCH"
+            echo ""
+            echo "This PR was merged with an invalid branch name!"
+            echo "Branch names must follow conventional commit format."
+            echo ""
+            echo "Valid prefixes: feat/, fix/, breaking/, chore/, docs/, etc."
+            echo "Please use proper branch naming for future PRs."
+            exit 1
           fi
         shell: bash
 
